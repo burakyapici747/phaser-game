@@ -1,0 +1,29 @@
+{
+  "name": "phaser-game",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/burakyapici747/phaser-game.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/burakyapici747/phaser-game/issues"
+  },
+  "homepage": "https://github.com/burakyapici747/phaser-game#readme",
+  "description": "",
+  "dependencies": {
+    "phaser": "^3.60.0",
+    "socket.io-client": "^4.7.2"
+  },
+  "devDependencies": {
+    "vite": "^5.0.8"
+  }
+}
