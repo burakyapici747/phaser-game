@@ -1,8 +1,8 @@
 services:
   phaser-game:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${{ secrets.DOCKERHUB_USERNAME }}/phaser-game:latest
+    ports:
+      - "8090:8090"
     volumes:
       - ./dist:/usr/share/nginx/html
     networks:
