@@ -1,0 +1,14 @@
+nohup: ignoring input
+
+> phaser-game@1.0.0 dev
+> vite
+
+
+  VITE v5.4.11  ready in 579 ms
+
+  ➜  Local:   https://localhost:8080/
+  ➜  Network: use --host to expose
+Error: spawn xdg-open ENOENT
+    at ChildProcess._handle.onexit (node:internal/child_process:285:19)
+    at onErrorNT (node:internal/child_process:483:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)

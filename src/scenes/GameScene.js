@@ -5,11 +5,31 @@ export default class GameScene extends Phaser.Scene {
         super({ key: 'GameScene' });
         this.players = new Map();
         this.localPlayer = null;
+        this.pingText = null;
+        this.lastPingTime = Date.now();
+        this.currentPing = 0;
     }
 
     init(data) {
         this.socket = data.socket;
         this.setupSocketListeners();
+        this.startPingInterval();
+    }
+
+    startPingInterval() {
+        // Send ping every 2 seconds
+        setInterval(() => {
+            this.lastPingTime = Date.now();
+            this.socket.emit('ping');
+        }, 2000);
+
+        // Listen for pong
+        this.socket.on('pong', () => {
+            this.currentPing = Date.now() - this.lastPingTime;
+            if (this.pingText) {
+                this.pingText.setText(`Ping: ${this.currentPing}ms`);
+            }
+        });
     }
 
     setupSocketListeners() {
@@ -45,7 +65,29 @@ export default class GameScene extends Phaser.Scene {
     }
 
     create() {
+        // Set world bounds
+        this.physics.world.setBounds(0, 0, 2400, 1800);
+        
+        // Create a background
+        this.add.grid(0, 0, 2400, 1800, 32, 32, 0xe0e0e0, 1, 0xcccccc)
+            .setOrigin(0, 0);
+
+        // Setup keyboard controls
         this.cursors = this.input.keyboard.createCursorKeys();
+        this.wasd = this.input.keyboard.addKeys({
+            up: Phaser.Input.Keyboard.KeyCodes.W,
+            down: Phaser.Input.Keyboard.KeyCodes.S,
+            left: Phaser.Input.Keyboard.KeyCodes.A,
+            right: Phaser.Input.Keyboard.KeyCodes.D
+        });
+
+        // Create ping text
+        this.pingText = this.add.text(16, 16, 'Ping: 0ms', {
+            fontSize: '18px',
+            fill: '#000',
+            backgroundColor: '#ffffff80',
+            padding: { x: 10, y: 5 }
+        }).setScrollFactor(0).setDepth(1000);
     }
 
     createLocalPlayer(playerData) {
@@ -57,6 +99,19 @@ export default class GameScene extends Phaser.Scene {
         this.localPlayer = square;
         this.localPlayer.playerData = playerData;
         this.players.set(playerData.id, square);
+
+        // Setup camera to follow player
+        this.cameras.main.setBounds(0, 0, 2400, 1800);
+        
+        // Daha smooth kamera takibi için ayarlar
+        this.cameras.main.startFollow(this.localPlayer, {
+            lerpX: 0.15,
+            lerpY: 0.15,
+            offsetX: 0,
+            offsetY: 0
+        });
+        
+        this.cameras.main.setZoom(1);
     }
 
     addOtherPlayer(playerData) {
@@ -71,15 +126,16 @@ export default class GameScene extends Phaser.Scene {
         const speed = 200;
         const velocity = { x: 0, y: 0 };
 
-        if (this.cursors.left.isDown) {
+        // Arrow keys
+        if (this.cursors.left.isDown || this.wasd.left.isDown) {
             velocity.x = -speed;
-        } else if (this.cursors.right.isDown) {
+        } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
             velocity.x = speed;
         }
 
-        if (this.cursors.up.isDown) {
+        if (this.cursors.up.isDown || this.wasd.up.isDown) {
             velocity.y = -speed;
-        } else if (this.cursors.down.isDown) {
+        } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
             velocity.y = speed;
         }
 
