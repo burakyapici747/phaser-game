@@ -5,10 +5,27 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "8080:8080"
     volumes:
+      - ./dist:/usr/share/nginx/html
+    networks:
+      - game-network
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - ./dist:/usr/share/nginx/html
       - ./cert.pem:/etc/nginx/ssl/cert.pem
       - ./fullchain.pem:/etc/nginx/ssl/fullchain.pem
       - ./privkey.pem:/etc/nginx/ssl/privkey.pem
-    restart: unless-stopped 
+    depends_on:
+      - phaser-game
+    networks:
+      - game-network
+    restart: unless-stopped
+
+networks:
+  game-network:
+    driver: bridge 
