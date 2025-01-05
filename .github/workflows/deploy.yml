@@ -42,7 +42,7 @@ jobs:
 
             # Create or update docker-compose.yml
             cat > docker-compose.yml << 'EOL'
-            version: '3.8'
+            version: '3.9'
             services:
               phaser-game:
                 image: ${{ secrets.DOCKERHUB_USERNAME }}/phaser-game:latest
