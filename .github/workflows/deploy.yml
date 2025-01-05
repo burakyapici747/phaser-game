@@ -23,7 +23,17 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/phaser-game:latest
 
-      - name: Copy SSL files and Deploy to VDS
+      - name: Copy configuration files to VDS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VDS_HOST }}
+          username: ${{ secrets.VDS_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "docker-compose.yml,nginx.conf"
+          target: "~/phaser-game"
+
+      - name: Deploy to VDS
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.VDS_HOST }}
@@ -40,24 +50,7 @@ jobs:
             echo "${{ secrets.FULLCHAIN_PEM }}" > fullchain.pem
             echo "${{ secrets.PRIVKEY_PEM }}" > privkey.pem
 
-            # Create or update docker-compose.yml
-            cat > docker-compose.yml << 'EOL'
-            version: '3.9'
-            services:
-              phaser-game:
-                image: ${{ secrets.DOCKERHUB_USERNAME }}/phaser-game:latest
-                ports:
-                  - "${PORT:-8080}:8080"
-                environment:
-                  - PORT=8080
-                volumes:
-                  - ./cert.pem:/etc/nginx/ssl/cert.pem
-                  - ./fullchain.pem:/etc/nginx/ssl/fullchain.pem
-                  - ./privkey.pem:/etc/nginx/ssl/privkey.pem
-                restart: unless-stopped
-            EOL
-
-            # Pull and deploy
+            # Deploy with docker compose
             sudo docker compose pull
             sudo docker compose down || true
             sudo docker compose up -d 
