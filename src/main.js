@@ -7,6 +7,7 @@ const config = {
     parent: 'game-container',
     width: 800,
     height: 600,
+    backgroundColor: '#FFFFFF',
     physics: {
         default: 'arcade',
         arcade: {
@@ -24,16 +25,16 @@ window.connectToGame = async () => {
     const serverPort = document.getElementById('server-port').value;
 
     if (!username || !serverIp || !serverPort) {
-        alert('Please fill in all fields');
-        return;
+       // alert('Please fill in all fields');
+        //return;
     }
 
-    const socket = io(`https://${serverIp}:${serverPort}`, {
+    const socket = io(`https://gamemagma.live:3001`, {
         transports: ['webtransport'],
         transportOptions: {
             webtransport: {
-                hostname: '127.0.0.1',
-                port: '3000'
+		hostname: 'gamemagma.live',
+                port: '3001'
             }
         }
     });
