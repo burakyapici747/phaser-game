@@ -1,6 +1,6 @@
 services:
   phaser-game:
-    image: ${{ secrets.DOCKERHUB_USERNAME }}/phaser-game:latest
+    image: burakyapici747/phaser-game:latest
     ports:
       - "8090:8090"
     volumes:
