@@ -2,7 +2,7 @@ services:
   phaser-game:
     image: burakyapici747/phaser-game:latest
     ports:
-      - "8090:8090"
+      - "8080:8080"
     volumes:
       - ./dist:/usr/share/nginx/html
     networks:
