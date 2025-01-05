@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   phaser-game:
     image: burakyapici747/phaser-game:latest
