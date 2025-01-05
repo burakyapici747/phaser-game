@@ -10,4 +10,5 @@ COPY src/ ./src/
 RUN npm install
 RUN npm run build
 
-CMD ["tail", "-f", "/dev/null"] 
+# Keep container running and wait for nginx
+CMD ["sh", "-c", "cp -r dist/* /app/dist/ && tail -f /dev/null"] 

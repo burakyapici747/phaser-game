@@ -1,12 +1,17 @@
+version: '3.8'
+
 services:
   phaser-game:
     image: burakyapici747/phaser-game:latest
-    ports:
-      - "8080:8080"
     volumes:
-      - ./dist:/usr/share/nginx/html
+      - dist-volume:/app/dist
     networks:
       - game-network
+    healthcheck:
+      test: ["CMD-SHELL", "test -d /app/dist"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   nginx:
     image: nginx:alpine
@@ -14,16 +19,20 @@ services:
       - "8090:8090"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./dist:/usr/share/nginx/html
+      - dist-volume:/usr/share/nginx/html
       - ./cert.pem:/etc/nginx/ssl/cert.pem
       - ./fullchain.pem:/etc/nginx/ssl/fullchain.pem
       - ./privkey.pem:/etc/nginx/ssl/privkey.pem
     depends_on:
-      - phaser-game
+      phaser-game:
+        condition: service_healthy
     networks:
       - game-network
     restart: unless-stopped
 
 networks:
   game-network:
-    driver: bridge 
+    driver: bridge
+
+volumes:
+  dist-volume: 
