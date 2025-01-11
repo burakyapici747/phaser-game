@@ -18,9 +18,9 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Copy nginx config and SSL certs
 COPY nginx.conf /etc/nginx/nginx.conf
-COPY cert.pem /etc/nginx/ssl/cert.pem
-COPY fullchain.pem /etc/nginx/ssl/fullchain.pem
-COPY privkey.pem /etc/nginx/ssl/privkey.pem
+#COPY cert.pem /etc/nginx/ssl/cert.pem
+# COPY fullchain.pem /etc/nginx/ssl/fullchain.pem
+# COPY privkey.pem /etc/nginx/ssl/privkey.pem
 
 # Create SSL directory
 RUN mkdir -p /etc/nginx/ssl
