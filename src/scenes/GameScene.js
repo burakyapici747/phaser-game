@@ -156,13 +156,11 @@ export default class GameScene extends Phaser.Scene {
         //TODO: input queue su anlik her tick'te bir tane alip gonderiyoruz. Sonradan bu degisebilir. Deneme yanilma
         this.socket.emit('input', {
             sequenceNumber: this.inputSequenceNumber++,
-            input: {
-                socketId: this.socket.id,
-                type: this.inputQueue?.[0]?.type,
-                vx: this.inputQueue?.[0]?.vx,
-                vy: this.inputQueue?.[0]?.vy,
-                rotation: this.inputQueue?.[0]?.rotation
-            }
+            socketId: this.socket.id,
+            type: this.inputQueue?.[0]?.type,
+            vx: this.inputQueue?.[0]?.vx,
+            vy: this.inputQueue?.[0]?.vy,
+            rotation: this.inputQueue?.[0]?.rotation
         });
         this.inputQueue.shift();
     }
