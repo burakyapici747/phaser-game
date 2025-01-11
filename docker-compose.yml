@@ -3,6 +3,7 @@ services:
     container_name: phaser-game-container
     image: burakyapici747/phaser-game:latest
     ports:
+      - "80:80"
       - "443:443"
     volumes:
       - ./cert.pem:/etc/nginx/ssl/cert.pem:ro
