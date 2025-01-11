@@ -10,5 +10,21 @@ COPY src/ ./src/
 RUN npm install
 RUN npm run build
 
-# Keep container running and wait for nginx
-CMD ["sh", "-c", "cp -r dist/* /app/dist/ && tail -f /dev/null"] 
+# Final nginx stage
+FROM nginx:alpine
+
+# Copy built files from builder
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Copy nginx config and SSL certs
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY cert.pem /etc/nginx/ssl/cert.pem
+COPY fullchain.pem /etc/nginx/ssl/fullchain.pem
+COPY privkey.pem /etc/nginx/ssl/privkey.pem
+
+# Create SSL directory
+RUN mkdir -p /etc/nginx/ssl
+
+EXPOSE 8090
+
+CMD ["nginx", "-g", "daemon off;"] 
