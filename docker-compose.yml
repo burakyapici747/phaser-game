@@ -1,10 +1,7 @@
-version: '3.8'
-
 services:
   phaser-game:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    container_name: phaser-game-container
+    image: burakyapici747/phaser-game:latest
     ports:
       - "8090:8090"
     restart: unless-stopped 
