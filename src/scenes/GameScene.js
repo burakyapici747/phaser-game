@@ -38,7 +38,7 @@ export default class GameScene extends Phaser.Scene {
     setupSocketListeners() {
         this.socket.on('game:init', ({ player, players }) => {
             this.createLocalPlayer(player);
-            players.forEach(p => {
+            players?.forEach(p => {
                 if (p.id !== this.socket.id) {
                     this.addOtherPlayer(p);
                 }
