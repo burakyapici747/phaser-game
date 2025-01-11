@@ -59,7 +59,7 @@ export default class GameScene extends Phaser.Scene {
         });
 
         this.socket.on('snapshot', (gameState) => {
-            Objects.key(gameState?.players)?.forEach((socketId) => {
+            Object.key(gameState?.players)?.forEach((socketId) => {
                 const player = gameState?.players[socketId];
                 if(socketId === this.socket.id) {
                     player.sequenceNumbers?.forEach((sequenceNumberStep) => {
