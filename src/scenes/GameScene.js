@@ -210,6 +210,8 @@ export default class GameScene extends Phaser.Scene {
             });
         }
 
+        console.log(this.localPlayer.x, this.localPlayer.y);
+
         this.localPlayer.body.setVelocity(velocity.x, velocity.y);
 
         // Handle rotation towards mouse
