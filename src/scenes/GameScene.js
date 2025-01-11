@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CLIENT_TICK_RATE, INPUT_TYPE } from '../constant.js';
+import { CLIENT_TICK_RATE, INPUT_TYPE, PLAYER_MOVE_SPEED, PLAYER_ROTATE_SPEED, PLAYER_SIZE } from '../constant.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
