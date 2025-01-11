@@ -116,6 +116,7 @@ export default class GameScene extends Phaser.Scene {
         this.time.addEvent({
             delay: CLIENT_TICK_RATE,
             callback: this.sendInputQueue,
+            callbackScope: this,
             loop: true
         });
     }
