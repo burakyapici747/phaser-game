@@ -162,6 +162,7 @@ export default class GameScene extends Phaser.Scene {
                 rotation: this.inputQueue?.[0]?.rotation
             }
         });
+        this.inputQueue.shift();
     }
 
     update() {
