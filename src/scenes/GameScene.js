@@ -157,6 +157,7 @@ export default class GameScene extends Phaser.Scene {
         this.socket.emit('input', {
             sequenceNumber: this.inputSequenceNumber++,
             input: {
+                socketId: this.socket.id,
                 type: this.inputQueue?.[0]?.type,
                 vx: this.inputQueue?.[0]?.vx,
                 vy: this.inputQueue?.[0]?.vy,
