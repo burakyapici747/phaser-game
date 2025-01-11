@@ -4,4 +4,8 @@ services:
     image: burakyapici747/phaser-game:latest
     ports:
       - "8090:8090"
+    volumes:
+      - ./cert.pem:/etc/nginx/ssl/cert.pem:ro
+      - ./fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro
+      - ./privkey.pem:/etc/nginx/ssl/privkey.pem:ro
     restart: unless-stopped 
