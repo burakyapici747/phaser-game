@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { CLIENT_TICK_RATE, INPUT_TYPE } from '../constant.js';
 
 export default class GameScene extends Phaser.Scene {
     constructor() {
@@ -14,6 +15,8 @@ export default class GameScene extends Phaser.Scene {
         this.socket = data.socket;
         this.setupSocketListeners();
         this.startPingInterval();
+        this.inputQueue = [];
+        this.inputSequenceNumber = 0;
     }
 
     startPingInterval() {
@@ -55,6 +58,27 @@ export default class GameScene extends Phaser.Scene {
             }
         });
 
+        this.socket.on('snapshot', (gameState) => {
+            gameState?.players?.forEach((player, socketId) => {
+                if(socketId === this.socket.id) {
+                    player.sequenceNumbers?.forEach((sequenceNumberStep) => {
+                        const currentClientSequenceNumberStep = this.inputQueue.find(input => input.sequenceNumber === sequenceNumberStep.sequenceNumber);
+                        if(currentClientSequenceNumberStep.x !== sequenceNumberStep.x || currentClientSequenceNumberStep.y !== sequenceNumberStep.y) {
+                            this.localPlayer.setPosition(sequenceNumberStep.x, sequenceNumberStep.y);
+                            
+                        }
+                        const indexOf = this.inputQueue.findIndex(input => input.sequenceNumber === sequenceNumberStep.sequenceNumber);
+                        if(indexOf !== -1) {   
+                            this.inputQueue.splice(indexOf, 1);
+                        }
+                    });
+                }else {
+                    //entity interpolate
+                    
+                }
+            });
+        });
+
         this.socket.on('player:left', (playerId) => {
             const player = this.players.get(playerId);
             if (player) {
@@ -88,6 +112,12 @@ export default class GameScene extends Phaser.Scene {
             backgroundColor: '#ffffff80',
             padding: { x: 10, y: 5 }
         }).setScrollFactor(0).setDepth(1000);
+
+        this.time.addEvent({
+            delay: CLIENT_TICK_RATE,
+            callback: this.sendInputQueue,
+            loop: true
+        });
     }
 
     createLocalPlayer(playerData) {
@@ -120,23 +150,62 @@ export default class GameScene extends Phaser.Scene {
         this.players.set(playerData.id, square);
     }
 
+    sendInputQueue() {
+        //TODO: input queue su anlik her tick'te bir tane alip gonderiyoruz. Sonradan bu degisebilir. Deneme yanilma
+        this.socket.emit('input', {
+            sequenceNumber: this.inputSequenceNumber++,
+            input: {
+                type: this.inputQueue?.[0]?.type,
+                vx: this.inputQueue?.[0]?.vx,
+                vy: this.inputQueue?.[0]?.vy,
+                rotation: this.inputQueue?.[0]?.rotation
+            }
+        });
+    }
+
     update() {
         if (!this.localPlayer) return;
 
-        const speed = 200;
         const velocity = { x: 0, y: 0 };
-
         // Arrow keys
         if (this.cursors.left.isDown || this.wasd.left.isDown) {
-            velocity.x = -speed;
+            velocity.x = -PLAYER_MOVE_SPEED;
+            this.inputQueue.push({
+                type: INPUT_TYPE.MOVE,
+                vx: -PLAYER_MOVE_SPEED,
+                vy: 0,
+                x: this.localPlayer.x,  
+                y: this.localPlayer.y,
+            });
         } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
-            velocity.x = speed;
+            velocity.x = PLAYER_MOVE_SPEED;
+            this.inputQueue.push({
+                type: INPUT_TYPE.MOVE,
+                vx: PLAYER_MOVE_SPEED,
+                vy: 0,
+                x: this.localPlayer.x,  
+                y: this.localPlayer.y,
+            });
         }
 
         if (this.cursors.up.isDown || this.wasd.up.isDown) {
-            velocity.y = -speed;
+            velocity.y = -PLAYER_MOVE_SPEED;
+            this.inputQueue.push({
+                type: INPUT_TYPE.MOVE,
+                vx: 0,
+                vy: -PLAYER_MOVE_SPEED,
+                x: this.localPlayer.x,  
+                y: this.localPlayer.y,
+            });
         } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
-            velocity.y = speed;
+            velocity.y = PLAYER_MOVE_SPEED;
+            this.inputQueue.push({
+                type: INPUT_TYPE.MOVE,
+                vx: 0,
+                vy: PLAYER_MOVE_SPEED,
+                x: this.localPlayer.x,  
+                y: this.localPlayer.y,
+            });
         }
 
         this.localPlayer.body.setVelocity(velocity.x, velocity.y);
@@ -151,13 +220,12 @@ export default class GameScene extends Phaser.Scene {
         this.localPlayer.rotation = angle;
 
         // Send position update to server
-        if (velocity.x !== 0 || velocity.y !== 0 || this.lastRotation !== angle) {
-            this.socket.emit('player:move', {
-                x: this.localPlayer.x,
-                y: this.localPlayer.y,
+        if (this.lastRotation !== angle) {
+            this.lastRotation = angle;
+            this.inputQueue.push({
+                type: INPUT_TYPE.ROTATE,
                 rotation: angle
             });
-            this.lastRotation = angle;
         }
     }
 } 
