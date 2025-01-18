@@ -236,7 +236,13 @@ export default class GameScene extends Phaser.Scene {
           y: this.localPlayer.y,
         });
       }
-
+      const pointer = this.input.activePointer;
+      const angle = Phaser.Math.Angle.Between(
+        this.localPlayer.x,
+        this.localPlayer.y,
+        pointer.x + this.cameras.main.scrollX,
+        pointer.y + this.cameras.main.scrollY
+      );
       if (this.lastRotation !== angle) {
         this.lastRotation = angle;
         this.inputQueue.push({
@@ -247,8 +253,6 @@ export default class GameScene extends Phaser.Scene {
       this.elapsedTime = 0;
       this.sendInputQueue();
     }
-
-    console.log(delta);
   }
 
   update(time, delta) {
