@@ -68,30 +68,47 @@ export default class GameScene extends Phaser.Scene {
       Object.keys(gameState?.players)?.forEach((socketId) => {
         const player = gameState?.players[socketId];
         if (socketId === this.socket.id) {
-          player.sequenceNumbers?.forEach((sequenceNumberStep) => {
-            const currentClientSequenceNumberStep = this.inputQueue.find(
-              (input) =>
-                input.sequenceNumber === sequenceNumberStep.sequenceNumber
+          // Server'dan gelen son onaylanan pozisyonu al
+          const serverPos = {
+            x: player.x,
+            y: player.y,
+            rotation: player.rotation,
+          };
+
+          // Server tarafından işlenen input'ları temizle
+          if (gameState.processedInputs[socketId]) {
+            const lastProcessedInput = Math.max(
+              ...gameState.processedInputs[socketId]
             );
-            if (
-              currentClientSequenceNumberStep.x !== sequenceNumberStep.x ||
-              currentClientSequenceNumberStep.y !== sequenceNumberStep.y
-            ) {
-              this.localPlayer.setPosition(
-                sequenceNumberStep.x,
-                sequenceNumberStep.y
-              );
-            }
-            const indexOf = this.inputQueue.findIndex(
-              (input) =>
-                input.sequenceNumber === sequenceNumberStep.sequenceNumber
+            this.inputQueue = this.inputQueue.filter(
+              (input) => input.sequenceNumber > lastProcessedInput
             );
-            if (indexOf !== -1) {
-              this.inputQueue.splice(indexOf, 1);
-            }
-          });
+          }
+
+          // Eğer server pozisyonu ile client pozisyonu arasında büyük fark varsa
+          const threshold = 5; // 5 pixel tolerans
+          if (
+            Math.abs(this.localPlayer.x - serverPos.x) > threshold ||
+            Math.abs(this.localPlayer.y - serverPos.y) > threshold
+          ) {
+            // Server pozisyonuna geri dön
+            this.localPlayer.x = serverPos.x;
+            this.localPlayer.y = serverPos.y;
+            this.localPlayer.rotation = serverPos.rotation;
+
+            // Henüz işlenmemiş input'ları tekrar uygula
+            this.inputQueue.forEach((input) => {
+              this.applyInput(input);
+            });
+          }
         } else {
-          //entity interpolate
+          // Diğer oyuncuları güncelle
+          const otherPlayer = this.players.get(socketId);
+          if (otherPlayer) {
+            otherPlayer.x = player.x;
+            otherPlayer.y = player.y;
+            otherPlayer.rotation = player.rotation;
+          }
         }
       });
     });
@@ -185,17 +202,19 @@ export default class GameScene extends Phaser.Scene {
   }
 
   sendInputQueue() {
-    //TODO: input queue su anlik her tick'te bir tane alip gonderiyoruz. Sonradan bu degisebilir. Deneme yanilma
-    this.socket.emit("input", {
-      sequenceNumber: this.inputSequenceNumber++,
-      socketId: this.socket.id,
-      type: this.inputQueue?.[0]?.type,
-      vx: this.inputQueue?.[0]?.vx,
-      vy: this.inputQueue?.[0]?.vy,
-      rotation: this.inputQueue?.[0]?.rotation,
-    });
-    console.log(this.inputQueue);
-    this.inputQueue.shift();
+    if (this.inputQueue.length > 0) {
+      const input = this.inputQueue[0];
+      this.socket.emit("input", {
+        sequenceNumber: input.sequenceNumber,
+        socketId: this.socket.id,
+        type: input.type,
+        vx: input.vx,
+        vy: input.vy,
+        rotation: input.rotation,
+        timestamp: input.timestamp,
+      });
+      // Input'u queue'dan silmiyoruz, server onaylayana kadar tutuyoruz
+    }
   }
 
   handleInput(delta) {
@@ -246,10 +265,10 @@ export default class GameScene extends Phaser.Scene {
         // Client-side prediction uygula
         this.applyInput(input);
         this.inputQueue.push(input);
+        this.sendInputQueue();
       }
 
       this.elapsedTime = 0;
-      this.sendInputQueue();
     }
   }
 
@@ -266,11 +285,10 @@ export default class GameScene extends Phaser.Scene {
   update(time, delta) {
     if (!this.localPlayer) return;
 
+    // Input handling
     this.handleInput(delta);
 
-    // Client-side prediction için input queue'yu uygula
-    this.inputQueue.forEach((input) => {
-      this.applyInput(input);
-    });
+    // Client-side prediction'ı burada tekrar uygulamıyoruz
+    // Çünkü handleInput zaten yapıyor
   }
 }
