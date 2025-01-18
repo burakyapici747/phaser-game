@@ -236,6 +236,14 @@ export default class GameScene extends Phaser.Scene {
           y: this.localPlayer.y,
         });
       }
+
+      if (this.lastRotation !== angle) {
+        this.lastRotation = angle;
+        this.inputQueue.push({
+          type: INPUT_TYPE.ROTATE,
+          rotation: angle,
+        });
+      }
       this.elapsedTime = 0;
       this.sendInputQueue();
     }
@@ -276,10 +284,6 @@ export default class GameScene extends Phaser.Scene {
     // Send position update to server
     if (this.lastRotation !== angle) {
       this.lastRotation = angle;
-      this.inputQueue.push({
-        type: INPUT_TYPE.ROTATE,
-        rotation: angle,
-      });
     }
   }
 }
