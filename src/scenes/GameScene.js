@@ -239,6 +239,8 @@ export default class GameScene extends Phaser.Scene {
       this.elapsedTime = 0;
       this.sendInputQueue();
     }
+
+    console.log(delta);
   }
 
   update(time, delta) {
