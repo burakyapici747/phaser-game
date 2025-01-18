@@ -201,41 +201,27 @@ export default class GameScene extends Phaser.Scene {
   handleInput(delta) {
     this.elapsedTime += delta;
     if (this.elapsedTime > CLIENT_TICK_RATE) {
-      if (this.cursors.left.isDown || this.wasd.left.isDown) {
-        this.inputQueue.push({
-          type: INPUT_TYPE.MOVE,
-          vx: -PLAYER_MOVE_SPEED,
-          vy: 0,
-          x: this.localPlayer.x,
-          y: this.localPlayer.y,
-        });
-      } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
-        this.inputQueue.push({
-          type: INPUT_TYPE.MOVE,
-          vx: PLAYER_MOVE_SPEED,
-          vy: 0,
-          x: this.localPlayer.x,
-          y: this.localPlayer.y,
-        });
+      // Velocity vektörünü hesapla
+      let vx = 0;
+      let vy = 0;
+
+      if (this.cursors.left.isDown || this.wasd.left.isDown)
+        vx -= PLAYER_MOVE_SPEED;
+      if (this.cursors.right.isDown || this.wasd.right.isDown)
+        vx += PLAYER_MOVE_SPEED;
+      if (this.cursors.up.isDown || this.wasd.up.isDown)
+        vy -= PLAYER_MOVE_SPEED;
+      if (this.cursors.down.isDown || this.wasd.down.isDown)
+        vy += PLAYER_MOVE_SPEED;
+
+      // Çapraz hareket için normalize et
+      if (vx !== 0 && vy !== 0) {
+        const normalize = Math.sqrt(2);
+        vx /= normalize;
+        vy /= normalize;
       }
 
-      if (this.cursors.up.isDown || this.wasd.up.isDown) {
-        this.inputQueue.push({
-          type: INPUT_TYPE.MOVE,
-          vx: 0,
-          vy: -PLAYER_MOVE_SPEED,
-          x: this.localPlayer.x,
-          y: this.localPlayer.y,
-        });
-      } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
-        this.inputQueue.push({
-          type: INPUT_TYPE.MOVE,
-          vx: 0,
-          vy: PLAYER_MOVE_SPEED,
-          x: this.localPlayer.x,
-          y: this.localPlayer.y,
-        });
-      }
+      // Mouse rotasyonunu hesapla
       const pointer = this.input.activePointer;
       const angle = Phaser.Math.Angle.Between(
         this.localPlayer.x,
@@ -243,51 +229,48 @@ export default class GameScene extends Phaser.Scene {
         pointer.x + this.cameras.main.scrollX,
         pointer.y + this.cameras.main.scrollY
       );
-      if (this.lastRotation !== angle) {
-        this.lastRotation = angle;
-        this.inputQueue.push({
-          type: INPUT_TYPE.ROTATE,
-          rotation: angle,
-        });
+
+      // Sadece hareket veya rotasyon varsa input gönder
+      if (vx !== 0 || vy !== 0 || this.lastRotation !== angle) {
+        const input = {
+          sequenceNumber: this.inputSequenceNumber++,
+          type: vx !== 0 || vy !== 0 ? INPUT_TYPE.MOVE : INPUT_TYPE.ROTATE,
+          vx,
+          vy,
+          rotation: Phaser.Math.RadToDeg(angle),
+          timestamp: Date.now(),
+          x: this.localPlayer.x,
+          y: this.localPlayer.y,
+        };
+
+        // Client-side prediction uygula
+        this.applyInput(input);
+        this.inputQueue.push(input);
       }
+
       this.elapsedTime = 0;
       this.sendInputQueue();
     }
   }
 
+  applyInput(input) {
+    if (input.type === INPUT_TYPE.MOVE) {
+      this.localPlayer.x += input.vx;
+      this.localPlayer.y += input.vy;
+    }
+    if (input.type === INPUT_TYPE.ROTATE || input.rotation !== undefined) {
+      this.localPlayer.rotation = Phaser.Math.DegToRad(input.rotation);
+    }
+  }
+
   update(time, delta) {
     if (!this.localPlayer) return;
+
     this.handleInput(delta);
 
-    const velocity = { x: 0, y: 0 };
-    // Arrow keys
-    if (this.cursors.left.isDown || this.wasd.left.isDown) {
-      velocity.x = -PLAYER_MOVE_SPEED;
-    } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
-      velocity.x = PLAYER_MOVE_SPEED;
-    }
-
-    if (this.cursors.up.isDown || this.wasd.up.isDown) {
-      velocity.y = -PLAYER_MOVE_SPEED;
-    } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
-      velocity.y = PLAYER_MOVE_SPEED;
-    }
-
-    this.localPlayer.body.setVelocity(velocity.x, velocity.y);
-
-    // Handle rotation towards mouse
-    const pointer = this.input.activePointer;
-    const angle = Phaser.Math.Angle.Between(
-      this.localPlayer.x,
-      this.localPlayer.y,
-      pointer.x + this.cameras.main.scrollX,
-      pointer.y + this.cameras.main.scrollY
-    );
-    this.localPlayer.rotation = angle;
-
-    // Send position update to server
-    if (this.lastRotation !== angle) {
-      this.lastRotation = angle;
-    }
+    // Client-side prediction için input queue'yu uygula
+    this.inputQueue.forEach((input) => {
+      this.applyInput(input);
+    });
   }
 }
