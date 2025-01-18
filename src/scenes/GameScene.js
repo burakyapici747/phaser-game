@@ -106,7 +106,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
-    // Set world bounds
+    this.elapsedTime = 0;
     this.physics.world.setBounds(0, 0, 2400, 1800);
 
     // Create a background
@@ -134,12 +134,12 @@ export default class GameScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(1000);
 
-    this.time.addEvent({
+    /*this.time.addEvent({
       delay: CLIENT_TICK_RATE,
       callback: this.sendInputQueue,
       callbackScope: this,
       loop: true,
-    });
+    });*/
   }
 
   createLocalPlayer(playerData) {
@@ -194,57 +194,70 @@ export default class GameScene extends Phaser.Scene {
       vy: this.inputQueue?.[0]?.vy,
       rotation: this.inputQueue?.[0]?.rotation,
     });
+    console.log(this.inputQueue);
     this.inputQueue.shift();
   }
 
-  update() {
+  handleInput(delta) {
+    this.elapsedTime += delta;
+    if (this.elapsedTime > CLIENT_TICK_RATE) {
+      if (this.cursors.left.isDown || this.wasd.left.isDown) {
+        this.inputQueue.push({
+          type: INPUT_TYPE.MOVE,
+          vx: -PLAYER_MOVE_SPEED,
+          vy: 0,
+          x: this.localPlayer.x,
+          y: this.localPlayer.y,
+        });
+      } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
+        this.inputQueue.push({
+          type: INPUT_TYPE.MOVE,
+          vx: PLAYER_MOVE_SPEED,
+          vy: 0,
+          x: this.localPlayer.x,
+          y: this.localPlayer.y,
+        });
+      }
+
+      if (this.cursors.up.isDown || this.wasd.up.isDown) {
+        this.inputQueue.push({
+          type: INPUT_TYPE.MOVE,
+          vx: 0,
+          vy: -PLAYER_MOVE_SPEED,
+          x: this.localPlayer.x,
+          y: this.localPlayer.y,
+        });
+      } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
+        this.inputQueue.push({
+          type: INPUT_TYPE.MOVE,
+          vx: 0,
+          vy: PLAYER_MOVE_SPEED,
+          x: this.localPlayer.x,
+          y: this.localPlayer.y,
+        });
+      }
+      this.elapsedTime = 0;
+      this.sendInputQueue();
+    }
+  }
+
+  update(time, delta) {
     if (!this.localPlayer) return;
+    this.handleInput(delta);
 
     const velocity = { x: 0, y: 0 };
     // Arrow keys
     if (this.cursors.left.isDown || this.wasd.left.isDown) {
       velocity.x = -PLAYER_MOVE_SPEED;
-      this.inputQueue.push({
-        type: INPUT_TYPE.MOVE,
-        vx: -PLAYER_MOVE_SPEED,
-        vy: 0,
-        x: this.localPlayer.x,
-        y: this.localPlayer.y,
-      });
     } else if (this.cursors.right.isDown || this.wasd.right.isDown) {
       velocity.x = PLAYER_MOVE_SPEED;
-      this.inputQueue.push({
-        type: INPUT_TYPE.MOVE,
-        vx: PLAYER_MOVE_SPEED,
-        vy: 0,
-        x: this.localPlayer.x,
-        y: this.localPlayer.y,
-      });
     }
 
     if (this.cursors.up.isDown || this.wasd.up.isDown) {
       velocity.y = -PLAYER_MOVE_SPEED;
-      this.inputQueue.push({
-        type: INPUT_TYPE.MOVE,
-        vx: 0,
-        vy: -PLAYER_MOVE_SPEED,
-        x: this.localPlayer.x,
-        y: this.localPlayer.y,
-      });
     } else if (this.cursors.down.isDown || this.wasd.down.isDown) {
       velocity.y = PLAYER_MOVE_SPEED;
-      this.inputQueue.push({
-        type: INPUT_TYPE.MOVE,
-        vx: 0,
-        vy: PLAYER_MOVE_SPEED,
-        x: this.localPlayer.x,
-        y: this.localPlayer.y,
-      });
     }
-
-    //console.log(this.localPlayer.x, this.localPlayer.y);
-
-    console.log(this.inputQueue);
 
     this.localPlayer.body.setVelocity(velocity.x, velocity.y);
 
